@@ -1,60 +1,94 @@
-# Workflow-Engine-using-API-
+# ⚙️ Workflow Engine using API
 
-#  Workflow Engine using API
+A minimal, extensible **state-machine (workflow) engine** built with **.NET 8** and **ASP.NET Core Minimal API**.  
+It allows you to define, instantiate, and operate custom workflows through RESTful API calls — ideal for prototyping automation logic, integrations, and interview-ready backend design.
 
-A minimal, flexible state-machine (workflow) API built with **.NET 8** and **ASP.NET Core Minimal API**. This engine enables developers and teams to define, instantiate, and manage custom workflows entirely through API calls — ideal for rapid prototyping, testing automation logic, and integration experiments.
+---
+
+![.NET 8](https://img.shields.io/badge/.NET-8.0-blueviolet)
+![Platform](https://img.shields.io/badge/platform-ASP.NET%20Core-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Status](https://img.shields.io/badge/status-beta-orange)
 
 ---
 
 ##  Features
 
-- Define workflows as collections of named states and permitted actions.
-- Start new workflow instances based on any workflow definition.
-- Execute actions on workflow instances with all transitions validated.
-- Inspect workflow definitions, states, actions, and instance history.
-- In-memory storage (no database dependency) — super fast for testing and prototyping.
+-  Define workflows as collections of **named states** and **permitted actions**
+-  Start new workflow instances based on defined templates
+-  Execute actions that **transition workflow states**
+-  Inspect workflow definitions and instance history
+-  In-memory storage (no external database) for lightning-fast prototyping
+-  Auto-generated **Swagger** UI for easy API exploration
 
 ---
 
 ##  Table of Contents
 
+- [ Architecture & Project Structure](#-architecture--project-structure)
 - [ Quick Start](#-quick-start)
 - [ API Endpoints](#-api-endpoints)
-- [ API Example Usage](#-api-example-usage)
+- [ Example API Usage](#-example-api-usage)
 - [ Validation Rules](#-validation-rules)
-- [ Project Structure](#-project-structure)
 - [ Assumptions & Limitations](#-assumptions--limitations)
+- [ For Interviewers / Reviewers](#-for-interviewers--reviewers)
 
 ---
 
-## 🔧 Quick Start
+##  Architecture & Project Structure
 
-### Prerequisites
+```
+WorkflowEngine/
+├── Models/
+│   ├── State.cs
+│   ├── Action.cs
+│   ├── WorkflowDefinition.cs
+│   ├── WorkflowInstance.cs
+│   └── ApiResponse.cs
+├── Services/
+│   ├── WorkflowDefinitionService.cs
+│   └── WorkflowInstanceService.cs
+├── Persistence/
+│   └── InMemoryStore.cs
+├── Program.cs                # Minimal API endpoint wiring
+└── README.md
+```
 
-- [.NET 8 SDK](https://dotnet.microsoft.com/en-us/download)
-- [Optional] Homebrew (for installation on Mac)
+- **Models** — Entities representing states, actions, workflows, instances, and responses.
+- **Services** — Core business logic for defining and executing workflows.
+- **Persistence** — Simple in-memory store for definitions and instance tracking.
+- **Program.cs** — Contains all the API routing using .NET 8 Minimal API style.
 
-### Steps
+---
 
-1. **Clone the repository:**
+##  Quick Start
+
+###  Clone the Repository
 
 ```bash
 git clone https://github.com/yourusername/workflow-engine-demo.git
 cd workflow-engine-demo/WorkflowEngine
+```
 
-2.**Build and run the API:**
+###  Build and Run the API
 
+```bash
 dotnet build
 dotnet run
+```
 
-3.**Access the Swagger UI (API Explorer):**
+###  Access the Swagger UI
 
-(https://localhost:7000/swagger)
+Visit:  
+[https://localhost:7000/swagger](https://localhost:7000/swagger)  
+Use the auto-generated Swagger interface to explore and test the API.
 
-API Endpoints
+---
+
+## 📡 API Endpoints
 
 | Method | Endpoint                          | Description                           |
-| ------ | --------------------------------- | ------------------------------------- |
+|--------|-----------------------------------|---------------------------------------|
 | POST   | `/workflows`                      | Create a new workflow definition      |
 | GET    | `/workflows`                      | List all workflow definitions         |
 | GET    | `/workflows/{definitionId}`       | Get a workflow definition by ID       |
@@ -63,17 +97,18 @@ API Endpoints
 | GET    | `/instances/{instanceId}`         | Get a workflow instance & its history |
 | POST   | `/instances/{instanceId}/actions` | Execute an action on an instance      |
 
-Example API Usage
+---
 
-1. Create a Workflow Definition
+##  Example API Usage
 
-h
+### 1. Create a Workflow Definition
 
+```http
 POST /workflows
 Content-Type: application/json
+```
 
-json
-
+```json
 {
   "id": "approval",
   "name": "Approval Workflow",
@@ -87,74 +122,104 @@ json
     { "id": "approve", "name": "Approve", "enabled": true, "fromStates": ["review"], "toState": "approved" }
   ]
 }
+```
 
-2. Start a Workflow Instance
+---
 
-http
+### 2. Start a Workflow Instance
 
+```http
 POST /instances
 Content-Type: application/json
+```
 
-json
-
+```json
 {
   "definitionId": "approval"
 }
+```
 
-3. Execute an Action
+---
 
-h
+### 3. Execute an Action
 
+```http
 POST /instances/{instanceId}/actions
 Content-Type: application/json
+```
 
-json
-
+```json
 {
   "actionId": "submit"
 }
+```
 
-4. Get Workflow Instance & History
+---
 
-http
+### 4. Get Workflow Instance & History
 
+```http
 GET /instances/{instanceId}
+```
 
-**Validation Rules**
+---
 
-Workflow Definitions
+##  Validation Rules
 
-1)Must have exactly one state with "isInitial": true.
+### Workflow Definitions
 
-2)Each id (state/action) must be unique.
+1. Must have **exactly one** state with `"isInitial": true`.
+2. Each `id` (for states and actions) must be **unique**.
+3. Actions must reference **valid and enabled** states for transitions.
 
-3)Action transitions must point to valid and enabled states.
-
-Workflow Instances
+### Workflow Instances
 
 Actions can be executed only if:
 
-1)The action is enabled.
+- The action is **enabled**
+- The instance is currently in one of the action’s `fromStates`
+- The **target state exists** and is **enabled**
+- The instance is **not already in a final state**
 
-2)The instance is in one of the action's fromStates.
+All invalid operations return **descriptive error messages**.
 
-3)The target state exists and is enabled.
+---
 
-4)The instance is not already in a final state.
+##  Assumptions & Limitations
 
-5)Invalid operations return clear, descriptive errors.
+1. Only **one initial state** allowed per workflow.
+2. All data is stored **in memory** — restarting the app clears all definitions and instances.
+3. No **authentication/authorization** — kept simple for demo & testing purposes.
+4. Not suitable for **production use** — meant for **learning**, **testing**, and **interviews**.
 
-Assumptions & Limitations
+---
 
-1)Only one initial state allowed per workflow.
+##  For Interviewers / Reviewers
 
-2)All workflow data is stored in memory (no persistence after restart).
+This project demonstrates:
 
-3)No authentication/authorization — this is by design for simplicity.
+- Clean code using ASP.NET Core Minimal API.
+- Domain modeling for finite state machines.
+- Service-oriented architecture with separation of concerns.
+- Fully working validation and transitions.
+- No third-party libraries — pure .NET 8 SDK.
 
-4)Not meant for production usage — ideal for learning, testing, and interviews.
+---
 
 
+##  Contributing
+
+Pull requests are welcome! 
+To contribute:
+
+```bash
+# Fork this repo
+# Create a feature branch
+# Make your changes
+# Submit a PR 
+```
+
+---
 
 
 
