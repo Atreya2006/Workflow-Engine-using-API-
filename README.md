@@ -24,8 +24,6 @@ A minimal, flexible state-machine (workflow) API built with **.NET 8** and **ASP
 - [ Validation Rules](#-validation-rules)
 - [ Project Structure](#-project-structure)
 - [ Assumptions & Limitations](#-assumptions--limitations)
-- [ For Interviewers / Reviewers](#-for-interviewers--reviewers)
-- [ Ideas for Future Work](#-ideas-for-future-work)
 
 ---
 
